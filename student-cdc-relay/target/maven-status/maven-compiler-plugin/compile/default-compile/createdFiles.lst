@@ -1,0 +1,4 @@
+com\sohan\student\utils\Operation.class
+com\sohan\student\StudentCDCRelayApplication.class
+com\sohan\student\config\DebeziumConnectorConfig.class
+com\sohan\student\listener\CDCListener.class

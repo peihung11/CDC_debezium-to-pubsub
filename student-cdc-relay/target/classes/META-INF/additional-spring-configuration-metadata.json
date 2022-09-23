@@ -1,0 +1,27 @@
+{"properties": [
+  {
+    "name": "student.datasource.databasename",
+    "type": "java.lang.String",
+    "description": "A description for 'student.datasource.databasename'"
+  },
+  {
+    "name": "student.datasource.host",
+    "type": "java.lang.String",
+    "description": "A description for 'student.datasource.host'"
+  },
+  {
+    "name": "student.datasource.port",
+    "type": "java.lang.String",
+    "description": "A description for 'student.datasource.port'"
+  },
+  {
+    "name": "student.datasource.username",
+    "type": "java.lang.String",
+    "description": "A description for 'student.datasource.username'"
+  },
+  {
+    "name": "student.datasource.password",
+    "type": "java.lang.String",
+    "description": "A description for 'student.datasource.password'"
+  }
+]}
