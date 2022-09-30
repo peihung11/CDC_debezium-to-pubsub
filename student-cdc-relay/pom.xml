@@ -72,6 +72,12 @@
             <version>1.9.5.Final</version>
         </dependency>
 
+        <dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
         <!-- Utility dependencies-->
         <dependency>
             <groupId>org.projectlombok</groupId>

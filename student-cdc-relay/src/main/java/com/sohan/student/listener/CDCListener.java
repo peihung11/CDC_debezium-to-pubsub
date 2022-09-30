@@ -16,6 +16,13 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -42,9 +49,25 @@ public class CDCListener {
     /**
      * The Debezium engine which needs to be loaded with the configurations, Started and Stopped - for the
      * CDC to work.
-     */
-    // private final EmbeddedEngine engine;
+     */    
     private final DebeziumEngine<ChangeEvent<String, String>> engine;
+
+
+    /**
+     * PostgreSQL database.
+     */   
+    private String url = "jdbc:postgresql://localhost:5432/studentdb";
+    private String user = "user";
+    private String password = "password";
+
+    /**
+     * Connect to the PostgreSQL database
+     *
+     * @return a Connection object
+     */
+    public Connection connect() throws SQLException {
+        return DriverManager.getConnection(url, user, password);        
+    }
 
    
     
@@ -61,14 +84,40 @@ public class CDCListener {
         // List<String> messagesList;
         Map<String, String> messages = new LinkedHashMap<String, String>();
         
+        ArrayList<String> lsnArrayList = new ArrayList<String>();
+        
+        // table 儲存需排除的已記錄過的 lsn
+        ResultSet rs = null;
+		String SQL ="Select * From recorded_lsn";
+        try (Connection conn = connect();
+                PreparedStatement pstmt = conn.prepareStatement(SQL)){
+            System.out.println("******************Connection******************");
+            // pstmt.setInt(1,1234);
+            // pstmt.setString(2,"1234");            
+            // System.out.println(pstmt);
+            
+            rs = pstmt.executeQuery();
+            while(rs.next()) {
+                lsnArrayList.add(rs.getString("lsn"));
+                // System.out.println(rs.getString("lsn"));    
+            } 
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+        }
+        
+        System.out.println("------lsnArrayList-------");
+        System.out.println(lsnArrayList);
+
+        
+
         Properties props = studentConnector.asProperties();
         this.engine = DebeziumEngine.create(Json.class)
         .using(props)
         .notifying((record,committer) -> {
-            // System.out.println("-----清空messages-------");
             // 清空messages
             messages.clear();
-            // System.out.println(messages);
+            Boolean isLastLsm = false;
+            String lsn_num_r ="";
 
             for (ChangeEvent<String, String> r : record) {               
                 
@@ -78,65 +127,153 @@ public class CDCListener {
                 //解析捕獲到資訊的key schema, 取得 Primary key or Unique key
                 // System.out.println("-----key_jsonObject-----");
                 JSONObject key_jsonObject =  new JSONObject(r.key());
-                // System.out.println(key_jsonObject.toString());
-                String key_schema = key_jsonObject.get("schema").toString();
-                // System.out.println(key_schema);
-                JSONObject key_schema_field = new JSONObject(key_schema);
-                String key_schema_field2 = key_schema_field.get("fields").toString();
-                // System.out.println(key_schema_field2);
-
-                //取得每個Primary key or Unique key欄位, 並加入jsonArray
-                JSONArray new_field_jsonArray = new JSONArray();
-                JSONArray field_jsonArray = new JSONArray(key_schema_field2);                
-                for(int i =0; i<field_jsonArray.length(); i++){
-                    String field_value = field_jsonArray.get(i).toString();
-                    JSONObject field_value2 = new JSONObject(field_value);
-                    String field_value3 = field_value2.get("field").toString();
-                    // System.out.println(field_value3);
-                    
-                    new_field_jsonArray.put(i, field_value3);                   
-                }
-                // System.out.println(new_field_jsonArray);
-			    
-
-
+                
                 //捕獲到資訊的value
+                // System.out.println("-----jsonObject-----");
                 JSONObject jsonObject = new JSONObject(r.value());
+                // System.out.println(jsonObject);
+                // System.out.println("-----jsonObject-----");
                 String payload_info = jsonObject.get("payload").toString();
-                String cdc_info = jsonObject.put("keyField",new_field_jsonArray).toString();
-                // System.out.println(cdc_info);
+                
+                // //lsn 是否有值,等於0代表table還沒有存入lsn,則可以記錄
+                // if (lsnArrayList.size()==0){
+                //     isLastLsm = true;
+                // }else{
+                //     isLastLsm = false;
+                // }
+
                 
 
+
+
+
+
+                //判別是否lsn存在
                 if (payload_info != "null"){
-                    System.out.println("-----CDC後-----");
-                    System.out.println(payload_info);
-                    JSONObject payload_info_obj = new JSONObject(payload_info);
-                    String payload_op = payload_info_obj.get("op").toString();
-                    // System.out.println(payload_op);
-                    if (!payload_op.equals("r")){
-                        System.out.println("-----放進message後-------");
-                        messages.put(cdc_info, "key1");
-                        // jsonObject.toString()
+                    JSONObject payload_info_obj2 = new JSONObject(payload_info);
+                    String lsn_num = payload_info_obj2.getJSONObject("source").get("lsn").toString();
+                    System.out.println(lsn_num);
 
-                    }                    
-                       
+                    //lsn table 未有資料 or 在lsn table中與最後一筆lsn符合 方法1
+                    // for(int i = 0;i<lsnArrayList.size();i++){
+                    //     if (lsnArrayList.size()!=0 && lsnArrayList.get(i).equals(lsn_num) ){
+                    //         System.out.println("table有");
+                    //         isLastLsm = true;
+                    //         lsn_num_r = lsn_num;
+                    //         continue;
+                    //     }else if(lsnArrayList.size()==0){
+                    //         isLastLsm = true;
+                    //     }
+
+                    // }
+
+                    //方法2
+                    if (lsnArrayList.size()!=0 && lsnArrayList.get(lsnArrayList.size()-1).equals(lsn_num) ){
+                        System.out.println("table有");
+                        isLastLsm = true;
+                        lsn_num_r = lsn_num;
+                        continue;
+                    }else if(lsnArrayList.size()==0){
+                        isLastLsm = true;
+                    }
                     
+                    // Integer lsnArrayListSize = lsnArrayList.size();
+
+                    lsn_num_r = lsn_num;
+                    
+                    
+                    if (isLastLsm){
+                        // System.out.println(key_jsonObject.toString());
+                        String key_schema = key_jsonObject.get("schema").toString();
+                        // System.out.println(key_schema);
+                        JSONObject key_schema_field = new JSONObject(key_schema);
+                        String key_schema_field2 = key_schema_field.get("fields").toString();
+                        // System.out.println(key_schema_field2);
+
+                        //取得每個Primary key or Unique key欄位, 並加入jsonArray
+                        JSONArray new_field_jsonArray = new JSONArray();
+                        JSONArray field_jsonArray = new JSONArray(key_schema_field2);                
+                        for(int i =0; i<field_jsonArray.length(); i++){
+                            String field_value = field_jsonArray.get(i).toString();
+                            JSONObject field_value2 = new JSONObject(field_value);
+                            String field_value3 = field_value2.get("field").toString();
+                            // System.out.println(field_value3);
+                            
+                            new_field_jsonArray.put(i, field_value3);                   
+                        }
+                        // System.out.println(new_field_jsonArray);                 
+
+
+                        //捕獲到資訊的value
+                        String cdc_info = jsonObject.put("keyField",new_field_jsonArray).toString();
+                        // System.out.println(cdc_info);
+                        
+                        if (payload_info != "null"){
+                            // System.out.println("-----After CDC-----");
+                            // System.out.println(payload_info);
+                            JSONObject payload_info_obj = new JSONObject(payload_info);
+                            String payload_op = payload_info_obj.get("op").toString();
+                            // System.out.println(payload_op);
+                            if (!payload_op.equals("r")){
+                                System.out.println("-----放進message後-------");
+                                messages.put(cdc_info, "key1");
+                                // jsonObject.toString()
+
+                            }     
+                        }
+                        committer.markProcessed(r);
+                    }
+                    
+                    // //lsn table 未有資料 or 在lsn table中與最後一筆lsn符合 
+                    // if (lsnArrayList.size()==0 || lsnArrayList.get(lsnArrayList.size()-1).equals(lsn_num) ){
+                    //     isLastLsm = true;
+                    // }
+                    // System.out.println("-----LSN 是 T or F-------");
+                    // System.out.println(isLastLsm);
+                    // lsnArrayList.clear(); //test
+
                 }
-                committer.markProcessed(r);
                 
             }
+            
+            //紀錄處理到的最後一筆lsn
+            isLastLsm = false;
+            System.out.println("-----print messages-------");
+            System.out.println(messages);
+            // System.out.println(lsn_num_r);
+            
+            
+            // System.out.println( lsnArrayList.get(lsnArrayList.size()-1));
+            
+            // if (lsnArrayList.size() == 0 || (lsnArrayList.size() != 0 && !lsnArrayList.get(lsnArrayList.size()-1).equals(lsn_num_r))){
+            
+            //last recorded lsn 存放在 recorded_lsn(table) 的 lsn(field)
+            String sqlLsn ="INSERT INTO recorded_lsn (lsn) VALUES (?);";
+            try (Connection conn = connect();
+                    PreparedStatement pstmt = conn.prepareStatement(sqlLsn)){
+                System.out.println("******************record last recorded lsn******************");
+                pstmt.setString(1,lsn_num_r);            
+                System.out.println(pstmt);
+                
+                pstmt.executeUpdate();
+                // lsnArrayList.clear(); 
 
-            // System.out.println("-----印出messages-------");
-            // System.out.println(messages);
-
-            try {
-                System.out.println("-----印出messages-------");
-                System.out.println(messages);
-                pb.sendMessage(messages); //cloud pubsub             
-
-            } catch (IOException e) {                
-                e.printStackTrace();
+            } catch (SQLException ex) {
+                System.out.println(ex.getMessage());
             }
+        // }
+
+
+            // // cloud pubsub
+            // try {
+            //     System.out.println("-----print messages-------");
+            //     System.out.println(messages);
+            //     pb.sendMessage(messages); //cloud pubsub
+            //     isLastLsm = false;         
+
+            // } catch (IOException e) {                
+            //     e.printStackTrace();
+            // }
             
         }).build();
         

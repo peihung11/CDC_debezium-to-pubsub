@@ -53,6 +53,7 @@ public class DebeziumConnectorConfig {
                 .with("database.user", studentDBUserName)
                 .with("database.password", studentDBPassword)
                 .with("database.dbname", studentDBName)
-                .with("table.whitelist", STUDENT_TABLE_NAME).build();
+                .with("table.whitelist", STUDENT_TABLE_NAME)
+                .with("slot.drop.on.stop",false).build();
     }
 }
