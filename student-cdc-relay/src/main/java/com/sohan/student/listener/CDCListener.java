@@ -60,6 +60,8 @@ public class CDCListener {
     private String user = "user";
     private String password = "password";
 
+    private Boolean notFirstCdc = false; //設置一個開關,不直接使用isLastLsm,是因比對到table lsn後是要他的下一筆才繼續執行上傳
+
     /**
      * Connect to the PostgreSQL database
      *
@@ -85,6 +87,8 @@ public class CDCListener {
         Map<String, String> messages = new LinkedHashMap<String, String>();
         
         ArrayList<String> lsnArrayList = new ArrayList<String>();
+
+        
         
         // table 儲存需排除的已記錄過的 lsn
         ResultSet rs = null;
@@ -119,7 +123,7 @@ public class CDCListener {
             Boolean isLastLsm = false;
             String lsn_num_r ="";
 
-            for (ChangeEvent<String, String> r : record) {               
+            for (ChangeEvent<String, String> r : record) {          
                 
                 // System.out.println("-----紀錄中-----");                
                 // System.out.println(r.key());
@@ -142,19 +146,13 @@ public class CDCListener {
                 //     isLastLsm = false;
                 // }
 
-                
-
-
-
-
-
-                //判別是否lsn存在
+                // 判別是否lsn存在
                 if (payload_info != "null"){
                     JSONObject payload_info_obj2 = new JSONObject(payload_info);
                     String lsn_num = payload_info_obj2.getJSONObject("source").get("lsn").toString();
                     System.out.println(lsn_num);
 
-                    //lsn table 未有資料 or 在lsn table中與最後一筆lsn符合 方法1
+                    // lsn table 未有資料 or 在lsn table中與最後一筆lsn符合 方法1
                     // for(int i = 0;i<lsnArrayList.size();i++){
                     //     if (lsnArrayList.size()!=0 && lsnArrayList.get(i).equals(lsn_num) ){
                     //         System.out.println("table有");
@@ -167,14 +165,18 @@ public class CDCListener {
 
                     // }
 
-                    //方法2
+                    // lsn table 未有資料 or 在lsn table中與最後一筆lsn符合 方法2
                     if (lsnArrayList.size()!=0 && lsnArrayList.get(lsnArrayList.size()-1).equals(lsn_num) ){
                         System.out.println("table有");
                         isLastLsm = true;
                         lsn_num_r = lsn_num;
                         continue;
-                    }else if(lsnArrayList.size()==0){
+                    }
+                    else if(lsnArrayList.size()==0){
                         isLastLsm = true;
+                    }
+                    else if(lsnArrayList.size()!=0 && notFirstCdc == true){ //程式執行中CDC的條件
+                        isLastLsm = true; 
                     }
                     
                     // Integer lsnArrayListSize = lsnArrayList.size();
@@ -222,30 +224,11 @@ public class CDCListener {
                             }     
                         }
                         committer.markProcessed(r);
-                    }
-                    
-                    // //lsn table 未有資料 or 在lsn table中與最後一筆lsn符合 
-                    // if (lsnArrayList.size()==0 || lsnArrayList.get(lsnArrayList.size()-1).equals(lsn_num) ){
-                    //     isLastLsm = true;
-                    // }
-                    // System.out.println("-----LSN 是 T or F-------");
-                    // System.out.println(isLastLsm);
-                    // lsnArrayList.clear(); //test
-
+                    }                
                 }
                 
             }
-            
-            //紀錄處理到的最後一筆lsn
-            isLastLsm = false;
-            System.out.println("-----print messages-------");
-            System.out.println(messages);
-            // System.out.println(lsn_num_r);
-            
-            
-            // System.out.println( lsnArrayList.get(lsnArrayList.size()-1));
-            
-            // if (lsnArrayList.size() == 0 || (lsnArrayList.size() != 0 && !lsnArrayList.get(lsnArrayList.size()-1).equals(lsn_num_r))){
+            System.out.println("-----for迴圈結束!!!!!!!進入insert-------");
             
             //last recorded lsn 存放在 recorded_lsn(table) 的 lsn(field)
             String sqlLsn ="INSERT INTO recorded_lsn (lsn) VALUES (?);";
@@ -261,21 +244,29 @@ public class CDCListener {
             } catch (SQLException ex) {
                 System.out.println(ex.getMessage());
             }
-        // }
+        
+            //紀錄處理到的最後一筆lsn (測試用)            
+            System.out.println("-----print messages-------");
+            System.out.println(messages);
+            // System.out.println(lsn_num_r);
+            isLastLsm = false;
+            notFirstCdc = true;
 
-
-            // // cloud pubsub
+            // cloud pubsub + 紀錄處理到的最後一筆lsn (正式)
             // try {
             //     System.out.println("-----print messages-------");
             //     System.out.println(messages);
+            //     isLastLsm = false;
+            //     notFirstCdc = true; 
             //     pb.sendMessage(messages); //cloud pubsub
-            //     isLastLsm = false;         
+                                  
 
             // } catch (IOException e) {                
             //     e.printStackTrace();
             // }
             
         }).build();
+        System.out.println("-----build的後面!!!!-------");
         
     }
 
