@@ -1,4 +1,4 @@
-package com.sohan.student.listener;
+package com.cdc.student.listener;
 
 import io.debezium.config.Configuration;
 
@@ -10,7 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
-import com.sohan.student.PubDemo;
+import com.cdc.student.PubDemo;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -21,7 +21,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -60,7 +60,7 @@ public class CDCListener {
     private String user = "user";
     private String password = "password";
 
-    private Boolean notFirstCdc = false; //設置一個開關,不直接使用isLastLsm,是因比對到table lsn後是要他的下一筆才繼續執行上傳
+    //設置一個開關,不直接使用isLastLsm,是因比對到table lsn後是要他的下一筆才繼續執行上傳
     private Boolean findLast = false;
     /**
      * Connect to the PostgreSQL database

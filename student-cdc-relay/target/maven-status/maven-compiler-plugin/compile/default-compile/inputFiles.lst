@@ -1,5 +1,4 @@
-C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\sohan\student\StudentCDCRelayApplication.java
-C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\sohan\student\config\DebeziumConnectorConfig.java
-C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\sohan\student\PubDemo.java
-C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\sohan\student\utils\Operation.java
-C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\sohan\student\listener\CDCListener.java
+C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\cdc\student\listener\CDCListener.java
+C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\cdc\student\StudentCDCRelayApplication.java
+C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\cdc\student\PubDemo.java
+C:\Users\User\Desktop\project_demo\engine-pubsub-seq-test\student-cdc-relay\src\main\java\com\cdc\student\config\DebeziumConnectorConfig.java

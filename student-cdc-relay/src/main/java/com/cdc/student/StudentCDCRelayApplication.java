@@ -1,4 +1,4 @@
-package com.sohan.student;
+package com.cdc.student;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
