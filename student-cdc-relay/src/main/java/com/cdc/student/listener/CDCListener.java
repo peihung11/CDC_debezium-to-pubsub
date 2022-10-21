@@ -11,13 +11,13 @@ import org.json.JSONObject;
 import org.springframework.stereotype.Component;
 
 import com.cdc.student.PubDemo;
+import com.cdc.student.connection.ConnectionDB;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,13 +53,6 @@ public class CDCListener {
     private final DebeziumEngine<ChangeEvent<String, String>> engine;
 
 
-    /**
-     * PostgreSQL database.
-     */   
-    private String url = "jdbc:postgresql://localhost:5432/studentdb";
-    private String user = "user";
-    private String password = "password";
-
     //設置一個開關,不直接使用isLastLsm,是因比對到table lsn後是要他的下一筆才繼續執行上傳
     private Boolean findLast = false;
     /**
@@ -67,12 +60,7 @@ public class CDCListener {
      *
      * @return a Connection object
      */
-    public Connection connect() throws SQLException {
-        return DriverManager.getConnection(url, user, password);        
-    }
-
-   
-    
+  
 
     /**
      * Constructor which loads the configurations and sets a callback method 'handleEvent', which is invoked when
@@ -82,18 +70,19 @@ public class CDCListener {
      *
      */
     private CDCListener(Configuration studentConnector) {
-        PubDemo pb = new PubDemo();
+        PubDemo pb = new PubDemo(studentConnector);
         // List<String> messagesList;
         Map<String, String> messages = new LinkedHashMap<String, String>();
         
         ArrayList<String> lsnArrayList = new ArrayList<String>();
+        ConnectionDB connection = new ConnectionDB();
 
         
         
         // table 儲存需排除的已記錄過的 lsn
         ResultSet rs = null;
 		String SQL ="Select * From recorded_lsn";
-        try (Connection conn = connect();
+        try (Connection conn = connection.connect(studentConnector);
                 PreparedStatement pstmt = conn.prepareStatement(SQL)){
             System.out.println("******************Connection******************");
             // pstmt.setInt(1,1234);
@@ -239,7 +228,7 @@ public class CDCListener {
                     //last recorded lsn 存放在 recorded_lsn(table) 的 lsn(field)
                     if(!lsnArrayList.contains(lsn_num_r)){
                         String sqlLsn ="INSERT INTO recorded_lsn (lsn) VALUES (?);";
-                        try (Connection conn = connect();
+                        try (Connection conn = connection.connect(studentConnector);
                                 PreparedStatement pstmt = conn.prepareStatement(sqlLsn)){
                             System.out.println("******************record last recorded lsn******************");
                             pstmt.setString(1,lsn_num_r);            

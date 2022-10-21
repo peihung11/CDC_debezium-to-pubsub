@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 public class DebeziumConnectorConfig {
 
     /**
-     * Student Database details.
+     * Database details.
      */
     @Value("${student.datasource.host}")
     private String studentDBHost;
@@ -30,10 +30,25 @@ public class DebeziumConnectorConfig {
     @Value("${student.datasource.password}")
     private String studentDBPassword;
 
+    @Value("${project.id}")
+    private String projectId;
+
+    @Value("${topic.id}")
+    private String topicId;
+    
+    @Value("${datasource.database.url}")
+    private String dbUrl;
+
+    @Value("${datasource.database.user}")
+    private String dbUser;
+
+    @Value("${datasource.database.password}")
+    private String dbPassword;
+
     private String STUDENT_TABLE_NAME = "public.student";
 
     /**
-     * Student database connector.
+     * database connector.
      *
      * @return Configuration.
      */
@@ -54,6 +69,13 @@ public class DebeziumConnectorConfig {
                 .with("database.password", studentDBPassword)
                 .with("database.dbname", studentDBName)
                 .with("table.whitelist", STUDENT_TABLE_NAME)
+                /* begin cloud pubsub properties */
+                .with("project.id", projectId)
+                .with("topic.id", topicId)
+                /* begin db jdbc properties */
+                .with("datasource.database.url",dbUrl)
+                .with("datasource.database.user", dbUser)
+                .with("datasource.database.password", dbPassword)
                 .with("slot.drop.on.stop",false).build();
     }
 }

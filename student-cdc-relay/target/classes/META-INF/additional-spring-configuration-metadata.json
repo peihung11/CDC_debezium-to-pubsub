@@ -23,5 +23,30 @@
     "name": "student.datasource.password",
     "type": "java.lang.String",
     "description": "A description for 'student.datasource.password'"
+  },
+  {
+    "name": "project.id",
+    "type": "java.lang.String",
+    "description": "A description for 'project.id'"
+  },
+  {
+    "name": "topic.id",
+    "type": "java.lang.String",
+    "description": "A description for 'topic.id'"
+  },
+  {
+    "name": "datasource.database.url",
+    "type": "java.lang.String",
+    "description": "A description for 'datasource.database.url'"
+  },
+  {
+    "name": "datasource.database.user",
+    "type": "java.lang.String",
+    "description": "A description for 'datasource.database.user'"
+  },
+  {
+    "name": "datasource.database.password",
+    "type": "java.lang.String",
+    "description": "A description for 'datasource.database.password'"
   }
 ]}
