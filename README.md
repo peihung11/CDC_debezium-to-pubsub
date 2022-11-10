@@ -2,6 +2,9 @@
 
 Blog URL: https://medium.com/@sohan_ganapathy/change-data-capture-cdc-with-embedded-debezium-and-springboot-6f10cd33d8ec
 
+## 目前問題
+還沒修改好application.properies部分
+
 ## Prerequisites
 - [Docker](https://docs.docker.com/v17.09/engine/installation/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
